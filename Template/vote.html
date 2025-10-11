@@ -1,0 +1,113 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cast Your Vote</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: #f5f7fb; }
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border-radius: 0 0 20px 20px;
+            padding: 28px 0;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+            margin-bottom: 18px;
+        }
+        .hero .voter-pill {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.25);
+            padding: 6px 12px; border-radius: 999px; font-size: .9rem;
+        }
+        .page-actions .btn { border-radius: 10px; font-weight: 600; }
+        .legend { color: #e9e9ff; opacity: .9; font-size: .95rem; }
+
+        .section-header { position: sticky; top: 0; z-index: 5; background: #f5f7fb; padding-top: 10px; }
+        .section-title { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 10px 0; }
+        .section-chip { background: #212529; color: #fff; padding: 6px 12px; border-radius: 999px; font-size: .9rem; }
+        .section-sep { height: 4px; background: #212529; border-radius: 2px; margin: 12px 0 16px 0; }
+
+        .candidate-card {
+            background: #fff; border-radius: 14px; padding: 14px;
+            box-shadow: 0 2px 12px rgba(16,24,40,.06);
+            transition: transform .15s ease, box-shadow .15s ease;
+            height: 100%; display: flex; flex-direction: column;
+        }
+        .candidate-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(16,24,40,.10); }
+        .candidate-photo { width: 100%; aspect-ratio: 16/10; object-fit: cover; border-radius: 10px; background: #eef2f7; }
+        .nickname-badge { background: #eef2ff; color: #4f46e5; border: 1px solid #dfe3ff; padding: 3px 8px; border-radius: 999px; font-size: .8rem; }
+        .vote-btn { border-radius: 10px; font-weight: 700; letter-spacing: .2px; }
+        .empty { color: #98a2b3; }
+
+        @media (max-width: 576px) {
+            .hero { border-radius: 0 0 14px 14px; }
+        }
+    </style>
+    </head>
+<body>
+    <div class="hero">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="mb-1">Cast Your Vote</h3>
+                <div class="legend">Choose one candidate per category. Review before submitting.</div>
+            </div>
+            <div class="page-actions d-flex align-items-center gap-2">
+                <span class="voter-pill"><i class="fas fa-user"></i> {{ voter_phone }}</span>
+                <a href="{% url 'landing' %}" class="btn btn-outline-light"><i class="fas fa-home me-1"></i> Home</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container pb-4">
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        {% if grouped %}
+            {% for position, list in grouped.items %}
+                {% if not forloop.first %}
+                    <div class="section-sep"></div>
+                {% endif %}
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="section-chip">{{ position }}</span>
+                        <span class="text-muted">Choose 1</span>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    {% for c in list %}
+                    <div class="col-md-4">
+                        <div class="candidate-card h-100 d-flex flex-column">
+                            {% if c.photo %}
+                                <img class="candidate-photo mb-2" src="{{ c.photo.url }}" alt="{{ c.name }}" />
+                            {% else %}
+                                <div class="candidate-photo mb-2 d-flex align-items-center justify-content-center"><i class="fas fa-user fa-2x text-secondary"></i></div>
+                            {% endif %}
+                            <div class="mb-1"><strong>{{ c.name }}</strong></div>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                {% if c.nickname %}<span class="nickname-badge">{{ c.nickname }}</span>{% endif %}
+                            </div>
+                            <form method="post" class="mt-auto">
+                                {% csrf_token %}
+                                <input type="hidden" name="candidate_id" value="{{ c.id }}" />
+                                <button type="submit" class="btn btn-primary w-100 vote-btn"><i class="fas fa-check me-2"></i> Vote</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center empty">No candidates available yet</div>
+        {% endif %}
+    </div>
+</body>
+</html>
+

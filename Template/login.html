@@ -1,0 +1,243 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login to Vote - Chairperson Election 2024</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <style>
+        body {
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .main-content {
+            width: 100%;
+            max-width: 400px;
+            padding: 40px 20px;
+        }
+        
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+        }
+        
+        .login-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+        }
+        
+        .input-group-custom {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 15px 50px 15px 50px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            font-size: 18px;
+        }
+        
+        .input-hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 8px;
+            padding-left: 15px;
+        }
+        
+        .login-button {
+            width: 100%;
+            padding: 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-bottom: 30px;
+        }
+        
+        .login-button:hover {
+            background: #0056b3;
+        }
+        
+        .home-button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .home-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 12px 24px;
+            background: #f8f9fa;
+            color: #666;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .home-button:hover {
+            background: #e9ecef;
+            border-color: #007bff;
+            color: #007bff;
+            text-decoration: none;
+        }
+        
+        .alert {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            border: none;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .alert-success {
+            background: #d1edff;
+            color: #0c5460;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        @media (max-width: 768px) {
+            .login-title {
+                font-size: 2rem;
+                margin-bottom: 30px;
+            }
+            
+            .input-field {
+                padding: 12px 45px 12px 45px;
+                font-size: 14px;
+            }
+            
+            .login-button {
+                padding: 12px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="login-container">
+            <h1 class="login-title">LOGIN</h1>
+            
+            <!-- Display Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Phone Number Form -->
+            <form id="phoneForm" method="post">
+                {% csrf_token %}
+                
+                <div class="input-group-custom">
+                    <i class="fas fa-phone input-icon"></i>
+                    <input type="tel" 
+                           class="input-field" 
+                           id="phone_number" 
+                           name="phone_number"
+                           placeholder="Phone Number"
+                           required>
+                    <div class="input-hint">
+                        Enter your phone number in international format (e.g., +1234567890, +447123456789, +23276123456)
+                    </div>
+                </div>
+
+                <button type="submit" class="login-button">SEND VERIFICATION CODE</button>
+            </form>
+
+            <div class="home-button-container">
+                <a href="{% url 'landing' %}" class="home-button">
+                    <i class="fas fa-home me-2"></i>
+                    Home
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+    <script>
+        // Phone number formatting
+        document.getElementById('phone_number').addEventListener('input', function() {
+            let value = this.value;
+            // Allow only numbers and + symbol
+            value = value.replace(/[^\d+]/g, '');
+            this.value = value;
+        });
+
+        // Form submission with loading state
+        document.getElementById('phoneForm').addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = 'SENDING...';
+            submitBtn.style.opacity = '0.7';
+            submitBtn.disabled = true;
+        });
+
+        // Add focus effects to input field
+        document.querySelector('.input-field').addEventListener('focus', function() {
+            this.style.borderColor = '#007bff';
+            this.style.boxShadow = '0 0 0 3px rgba(0, 123, 255, 0.1)';
+        });
+        
+        document.querySelector('.input-field').addEventListener('blur', function() {
+            this.style.borderColor = '#e0e0e0';
+            this.style.boxShadow = 'none';
+        });
+    </script>
+</body>
+</html>

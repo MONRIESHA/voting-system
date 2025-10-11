@@ -1,0 +1,308 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ election_title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <style>
+        :root { --bg:#0f172a; --surface:#0b1324; --surface2:#111827; --text:#e5e7eb; --muted:#9ca3af; --sky1:#0ea5e9; --sky2:#38bdf8; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        .hero-section {
+            background: linear-gradient(135deg, var(--sky2) 0%, var(--sky1) 100%);
+            color: #031b0c;
+            padding: 60px 0;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(14,165,233,.25);
+        }
+        
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .hero-subtitle {
+            font-size: 1.3rem;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.25);
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.4);
+        }
+        
+        .main-content {
+            background: var(--surface);
+            padding: 80px 0;
+        }
+        
+        .election-card {
+            background: var(--surface2);
+            color: var(--text);
+            border-radius: 20px;
+            padding: 50px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        
+        .election-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--sky2) 0%, var(--sky1) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            color: #031b0c;
+            font-size: 2.5rem;
+            box-shadow: 0 10px 25px rgba(56,189,248,.35);
+        }
+        
+        .election-title { font-size: 2.5rem; font-weight: 600; color: var(--text); margin-bottom: 20px; }
+        
+        .election-description { font-size: 1.1rem; color: var(--muted); margin-bottom: 40px; line-height: 1.6; }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+        
+        .stat-item { text-align: center; padding: 20px; background: #0b1324; border-radius: 15px; transition: transform 0.3s ease; }
+        
+        .stat-item:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 1.5rem;
+            color: white;
+        }
+        
+        .stat-icon.calendar { background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%); }
+        .stat-icon.candidates { background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%); }
+        .stat-icon.security { background: linear-gradient(135deg, #22d3ee 0%, #60a5fa 100%); }
+        
+        .stat-label { font-size: 0.9rem; color: var(--muted); margin-bottom: 5px; }
+        
+        .stat-value { font-size: 1.3rem; font-weight: 600; color: var(--text); }
+        
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-primary-custom {
+            background: linear-gradient(135deg, var(--sky2) 0%, var(--sky1) 100%);
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #031b0c;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(56, 189, 248, 0.35);
+        }
+        
+        .btn-primary-custom:hover { transform: translateY(-2px); box-shadow: 0 15px 30px rgba(56, 189, 248, 0.45); color: #031b0c; }
+        
+        .btn-secondary-custom {
+            background: transparent;
+            border: 2px solid var(--sky2);
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--sky2);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary-custom:hover { background: var(--sky2); color: #031b0c; transform: translateY(-2px); }
+        
+        .security-notice {
+            background: linear-gradient(135deg, rgba(14,165,233,.15) 0%, rgba(56,189,248,.25) 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 40px 0;
+            border: none;
+        }
+        
+        .security-icon { width: 50px; height: 50px; background: rgba(56,189,248,.25); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 20px; color: var(--text); }
+        
+        .footer { background: #0b1324; color: var(--text); padding: 40px 0; text-align: center; }
+        
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+            
+            .election-card {
+                padding: 30px 20px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn-primary-custom,
+            .btn-secondary-custom {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="status-badge">
+                <i class="fas fa-circle me-2"></i>
+                {{ election_status }}
+            </div>
+            <h1 class="hero-title">{{ election_title }}</h1>
+            <p class="hero-subtitle">{{ election_description }}</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <section class="main-content">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="election-card">
+                        <div class="election-icon">
+                            <i class="fas fa-vote-yea"></i>
+                        </div>
+                        
+                        <h2 class="election-title">Cast Your Vote</h2>
+                        <p class="election-description">
+                            Participate in the democratic process by voting for your preferred candidate.
+                            Your voice matters in shaping the future leadership of our organization.
+                        </p>
+
+                        <!-- Election Statistics -->
+                        <div class="stats-container">
+                            <div class="stat-item">
+                                <div class="stat-icon calendar">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                                <div class="stat-label">Election Ends</div>
+                                <div class="stat-value">{{ end_date }}</div>
+                            </div>
+                            
+                            <div class="stat-item">
+                                <div class="stat-icon candidates">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="stat-label">Candidates</div>
+                                <div class="stat-value">{{ candidate_count }}</div>
+                            </div>
+                            
+                            <div class="stat-item">
+                                <div class="stat-icon security">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <div class="stat-label">Security</div>
+                                <div class="stat-value">SMS Verified</div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="action-buttons">
+                            <a href="{% url 'login' %}" class="btn-primary-custom">
+                                <i class="fas fa-sign-in-alt me-2"></i>
+                                Vote
+                            </a>
+                            <a href="{% url 'admin_login' %}" class="btn-secondary-custom">
+                                <i class="fas fa-user-shield me-2"></i>
+                                Login
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Security Notice -->
+                    <div class="security-notice">
+                        <div class="d-flex align-items-center">
+                            <div class="security-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-2">Secure Voting Process</h5>
+                                <p class="mb-0">
+                                    Your vote is protected by SMS verification. Only registered phone numbers can participate in the election process.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0">
+                        &copy; 2025 Voting System. All rights reserved.
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-0">
+                        <i class="fas fa-envelope me-2"></i>
+                        Need help? Contact us at 
+                        <a href="mailto:admin@voting.com" class="text-white">admin@voting.com</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>

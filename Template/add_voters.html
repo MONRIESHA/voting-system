@@ -1,0 +1,667 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Voters - Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <style>
+        :root { --bg:#0f172a; --surface:#111827; --surface2:#1f2937; --text:#e5e7eb; --muted:#9ca3af; --primary:#60a5fa; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+        
+        .breadcrumb-custom {
+            background: var(--surface);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.35);
+        }
+        
+        .breadcrumb-custom .breadcrumb {
+            margin: 0;
+        }
+        
+        .breadcrumb-custom .breadcrumb-item {
+            font-size: 0.95rem;
+        }
+        
+        .breadcrumb-custom .breadcrumb-item a {
+            color: #667eea;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .breadcrumb-custom .breadcrumb-item a:hover {
+            color: #764ba2;
+        }
+        
+        .breadcrumb-custom .breadcrumb-item.active {
+            color: #666;
+        }
+        
+        .toolbar {
+            background: var(--surface);
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,.35);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .toolbar-title { font-weight: 700; color: var(--text); font-size: 1.1rem; }
+        .toolbar-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-action-primary {
+            background: #2563eb;
+            border: none;
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        .btn-action-secondary {
+            background: rgba(37,99,235,.12);
+            border: 1px solid rgba(37,99,235,.35);
+            color: #93c5fd;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        
+        .page-title { font-size: 1.8rem; font-weight: 600; margin-bottom: 5px; color: var(--text); }
+        
+        .page-subtitle { color: var(--muted); font-size: 0.95rem; margin: 0; }
+        
+        .content-layout { margin-bottom: 16px; }
+        
+        @media (max-width: 992px) {
+            .content-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .stats-card { display: none; }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: var(--surface2);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .stat-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.3rem;
+            margin-right: 15px;
+        }
+        
+        .stat-content {
+            flex: 1;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 2px;
+        }
+        
+        .stat-label { color: var(--muted); font-size: 0.85rem; }
+        
+        .form-card { background: var(--surface);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,.35);
+            padding: 25px;
+            display: none;
+            margin-bottom: 16px;
+        }
+        
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .form-label { font-weight: 600; color: var(--text); margin-bottom: 10px; }
+        
+        .form-input, .phone-textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #374151;
+            border-radius: 8px;
+            font-size: 16px;
+            background: var(--surface2);
+            color: var(--text);
+        }
+
+        .phone-textarea {
+            font-family: 'Courier New', monospace;
+            min-height: 200px;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-input:focus, .phone-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(96,165,250,.2);
+        }
+        
+        .format-hint { background: #0b1324;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .format-hint h6 {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .format-example { font-family: 'Courier New', monospace; color: var(--muted); line-height: 1.8; }
+        
+        .btn-primary-custom { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary-custom { background: var(--surface2); border: 2px solid #374151;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary-custom:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .table-card { background: var(--surface);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,.35);
+            padding: 25px;
+        }
+        
+        .voters-table {
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        .voters-table th { background: var(--surface2);
+            padding: 12px 15px;
+            font-weight: 600;
+            color: var(--text);
+            border-bottom: 2px solid #374151;
+            font-size: 0.9rem;
+        }
+        .voters-table thead .filters th { background: var(--surface); border-bottom: 1px solid #374151; }
+        .filter-input { width: 100%; background: var(--surface2); border: 1px solid #374151; border-radius: 6px; padding: 6px 8px; font-size: 0.85rem; color: var(--text); }
+        
+        .voters-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #374151;
+            vertical-align: middle;
+            font-size: 0.9rem;
+        }
+        
+        .voters-table tr:hover { background: #0b1324; }
+        }
+        
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto;
+            border-radius: 8px;
+        }
+        
+        .badge-custom {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .badge-voted { background: rgba(34,197,94,.15); color: #86efac; }
+        
+        .badge-pending { background: rgba(234,179,8,.15); color: #fde68a; }
+        
+        .btn-delete { background: #b91c1c; color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-delete:hover {
+            background: #c82333;
+        }
+        
+        .alert {
+            border: none;
+            border-radius: 8px;
+            padding: 15px 20px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        .search-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .search-row-left {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .search-pill {
+            background: white;
+            border-radius: 10px;
+            padding: 10px 14px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            color: #0d6efd;
+            font-weight: 600;
+        }
+        .btn-export { padding: 10px 14px; border: 1px solid #e5e7eb; background: white; border-radius: 8px; font-weight: 600; }
+        .search-row-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+        .search-input { width: 420px; max-width: 60vw; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; }
+        .btn-icon { border: 1px solid #e5e7eb; background: white; border-radius: 8px; padding: 10px 12px; }
+        /* Sidebar helpers (fallback) */
+        .sidebar { position: fixed; left: 0; top: 0; height: 100vh; width: 240px; background: linear-gradient(180deg, #0b1324 0%, #0f172a 100%); color: var(--text); overflow-y: auto; transform: translateX(0); z-index: 1030; }
+        .sidebar .nav-link { color: rgba(229,231,235,0.9); }
+        .sidebar .nav-link:hover { color: #fff; }
+        .content-with-sidebar { margin-left: 240px; width: 100%; }
+        @media (max-width: 992px) { .content-with-sidebar { margin-left: 0; } .sidebar { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="d-flex">
+        {% include 'sidebar.html' %}
+        <div class="content-with-sidebar">
+    <div class="main-container">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb-custom">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'results' %}">
+                            <i class="fas fa-home me-1"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        <i class="fas fa-user-plus me-1"></i>
+                        Add Voters
+                    </li>
+                </ol>
+            </nav>
+        </div>
+        
+        <!-- Top Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-title">
+                Voters (Total {{ total_voters }})
+            </div>
+            <div class="toolbar-actions">
+                <button id="btnAddSingle" type="button" class="btn-action-primary">
+                    <i class="fas fa-plus me-2"></i> Add Voter
+                </button>
+                <button id="btnBulk" type="button" class="btn-action-secondary">
+                    <i class="fas fa-file-upload me-2"></i> Bulk Upload
+                </button>
+                <button id="btnRefresh" type="button" class="btn btn-icon" onclick="location.reload()">
+                    <i class="fas fa-rotate"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Search / Export Row -->
+        <div class="search-row">
+            <div class="search-row-left">
+                <div class="search-pill">
+                    <i class="fas fa-magnifying-glass me-1"></i> Search by
+                </div>
+                <button class="btn-export">Export Basic</button>
+            </div>
+            <div class="search-row-right">
+                <input id="tableSearch" class="search-input" type="text" placeholder="Search" />
+                <button class="btn-icon" title="Clear" id="btnClearSearch"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>
+
+        <!-- Display Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Main Content Layout -->
+        <div class="content-layout">
+            <!-- Left Column: Stats & Form -->
+            <div>
+                <!-- Statistics Card -->
+                <div class="stats-card">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-bar"></i>
+                        Statistics
+                    </h5>
+                    
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ total_voters }}</div>
+                            <div class="stat-label">Total Voters</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <i class="fas fa-vote-yea"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ voted_count }}</div>
+                            <div class="stat-label">Voted</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <i class="fas fa-hourglass-half"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ total_voters|add:"-"|add:voted_count }}</div>
+                            <div class="stat-label">Pending</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Voters Form -->
+                <div class="form-card">
+                    <h5 class="card-title">
+                        <i class="fas fa-phone-alt"></i>
+                        Add Voter
+                    </h5>
+                    
+                    <form id="singleAddForm" method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="phone_single" class="form-label">Telephone</label>
+                            <input type="tel" id="phone_single" class="form-input" placeholder="e.g. +1234567890, +447123456789, +23276123456" autocomplete="tel" />
+                            <small class="text-muted">International format: +[country code][number]. Accepts all countries.</small>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <a href="#" id="toggleBulkArea">Or add multiple numbers</a>
+                        </div>
+                        
+                        <div id="bulkArea" style="display:none;">
+                            <div class="format-hint">
+                                <h6><i class="fas fa-info-circle me-2"></i>Accepted Formats (All Countries)</h6>
+                                <div class="format-example">
+                                    ✓ +1234567890 (USA)<br>
+                                    ✓ +447123456789 (UK)<br>
+                                    ✓ +23276123456 (Sierra Leone)<br>
+                                    ✓ +2348012345678 (Nigeria)<br>
+                                    ✓ +971501234567 (UAE)<br>
+                                    ✓ 76123456 (local SL number - auto-converted)
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="phone_numbers" class="form-label">Enter phone numbers</label>
+                                <textarea id="phone_numbers" name="phone_numbers" class="phone-textarea" style="min-height: 150px;" placeholder="One per line or comma separated"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="reset" class="btn-secondary-custom">Clear</button>
+                            <button type="submit" class="btn-primary-custom">Submit</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column: Voters List -->
+            <div class="table-card">
+                <h5 class="card-title">
+                    <i class="fas fa-list"></i>
+                    Registered Voters ({{ total_voters }})
+                </h5>
+                
+                {% if voters %}
+                    <div class="table-container">
+                        <table class="voters-table" id="votersTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">#</th>
+                                    <th>Phone Number</th>
+                                    <th style="width: 120px;">Status</th>
+                                    <th style="width: 150px;">Registered</th>
+                                    <th style="width: 100px;">Action</th>
+                                </tr>
+                                <tr class="filters">
+                                    <th></th>
+                                    <th><input id="filterPhone" class="filter-input" type="text" placeholder="Filter phone" /></th>
+                                    <th><input id="filterStatus" class="filter-input" type="text" placeholder="Filter status" /></th>
+                                    <th><input id="filterDate" class="filter-input" type="text" placeholder="Filter date" /></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for voter in voters %}
+                                    <tr id="voter-{{ voter.id }}">
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>
+                                            <strong>{{ voter.phone_number }}</strong>
+                                        </td>
+                                        <td>
+                                            {% if voter.has_voted %}
+                                                <span class="badge-custom badge-voted">
+                                                    <i class="fas fa-check-circle me-1"></i>
+                                                    Voted
+                                                </span>
+                                            {% else %}
+                                                <span class="badge-custom badge-pending">
+                                                    <i class="fas fa-clock me-1"></i>
+                                                    Pending
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ voter.registered_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            <button 
+                                                class="btn-delete" 
+                                                onclick="deleteVoter({{ voter.id }}, '{{ voter.phone_number }}')"
+                                                {% if voter.has_voted %}disabled{% endif %}>
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-users-slash"></i>
+                        <h4>No voters registered yet</h4>
+                        <p>Add phone numbers using the form to register eligible voters</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Toggle open the inline form like "Add Student"
+        document.getElementById('btnAddSingle').addEventListener('click', function() {
+            const form = document.querySelector('.form-card');
+            form.style.display = form.style.display === 'none' || form.style.display === '' ? 'block' : 'none';
+            if (form.style.display === 'block') {
+                document.getElementById('phone_numbers').focus();
+            }
+        });
+
+        // Toggle bulk area
+        document.getElementById('toggleBulkArea').addEventListener('click', function(e){
+            e.preventDefault();
+            const area = document.getElementById('bulkArea');
+            area.style.display = area.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // Clear search input
+        document.getElementById('btnClearSearch').addEventListener('click', function(){
+            const input = document.getElementById('tableSearch');
+            input.value = '';
+            applyTableFilters();
+        });
+
+        // Basic client-side table search and column filters
+        const tableSearch = document.getElementById('tableSearch');
+        const filterPhone = document.getElementById('filterPhone');
+        const filterStatus = document.getElementById('filterStatus');
+        const filterDate = document.getElementById('filterDate');
+        [tableSearch, filterPhone, filterStatus, filterDate].forEach(el => {
+            if (el) el.addEventListener('input', applyTableFilters);
+        });
+
+        function applyTableFilters() {
+            const q = (tableSearch?.value || '').toLowerCase();
+            const qPhone = (filterPhone?.value || '').toLowerCase();
+            const qStatus = (filterStatus?.value || '').toLowerCase();
+            const qDate = (filterDate?.value || '').toLowerCase();
+
+            const rows = document.querySelectorAll('#votersTable tbody tr');
+            rows.forEach(row => {
+                const phone = (row.children[1]?.innerText || '').toLowerCase();
+                const status = (row.children[2]?.innerText || '').toLowerCase();
+                const date = (row.children[3]?.innerText || '').toLowerCase();
+                const matches = (
+                    (!q || row.innerText.toLowerCase().includes(q)) &&
+                    (!qPhone || phone.includes(qPhone)) &&
+                    (!qStatus || status.includes(qStatus)) &&
+                    (!qDate || date.includes(qDate))
+                );
+                row.style.display = matches ? '' : 'none';
+            });
+        }
+
+        // Submit mapping: if single input provided, map to phone_numbers for backend
+        const singleForm = document.getElementById('singleAddForm');
+        singleForm.addEventListener('submit', function(){
+            const single = document.getElementById('phone_single').value.trim();
+            const bulk = document.getElementById('phone_numbers');
+            if (single && (!bulk.value || bulk.value.trim() === '')) {
+                bulk.value = single; // backend expects phone_numbers
+            }
+        });
+        function deleteVoter(voterId, phoneNumber) {
+            if (!confirm(`Are you sure you want to delete voter ${phoneNumber}?`)) {
+                return;
+            }
+            
+            fetch(`/delete-voter/${voterId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove the row from table
+                    document.getElementById(`voter-${voterId}`).remove();
+                    
+                    // Reload page to update stats
+                    location.reload();
+                } else {
+                    alert('Error deleting voter: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            });
+        }
+        
+        // Auto-dismiss alerts after 5 seconds
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+    </script>
+</body>
+</html>
+

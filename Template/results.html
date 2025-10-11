@@ -1,0 +1,655 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - {{ election_title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <style>
+        /* Dark theme */
+        :root { --bg:#0f172a; --surface:#111827; --surface2:#1f2937; --text:#e5e7eb; --muted:#9ca3af; --primary:#60a5fa; --success:#22c55e; }
+        body { background: var(--bg); color: var(--text); }
+        .text-muted { color: var(--muted) !important; }
+
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(180deg, #0b1324 0%, #0f172a 100%);
+            transition: all 0.3s ease;
+            width: 250px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+        }
+        .sidebar.collapsed {
+            width: 60px;
+        }
+        .sidebar.collapsed .nav-text {
+            display: none;
+        }
+        .sidebar.collapsed #sidebar-title {
+            display: none;
+        }
+        .sidebar.collapsed .d-flex {
+            justify-content: center;
+        }
+        .sidebar.collapsed .d-flex i {
+            margin-right: 0 !important;
+        }
+        .sidebar .nav-link {
+            color: rgba(229,231,235,0.9);
+            padding: 15px 20px;
+            border-radius: 0;
+            transition: all 0.3s;
+        }
+        .sidebar .nav-link:hover {
+            background-color: rgba(255,255,255,0.08);
+            color: #fff;
+        }
+        .sidebar .nav-link.active {
+            background-color: #2563eb;
+            color: #fff;
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            transition: all 0.3s ease;
+        }
+        .main-content.collapsed {
+            margin-left: 60px;
+        }
+        .dashboard-header {
+            background: var(--surface);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+            padding: 20px 30px;
+            margin-bottom: 30px;
+        }
+        /* Winner Card */
+        .winner-card {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            color: #fff;
+            border-radius: 20px;
+            padding: 40px 30px;
+            box-shadow: 0 15px 35px rgba(37,99,235,0.25);
+        }
+        
+        .trophy-icon i {
+            font-size: 4rem;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .winner-label {
+            font-size: 1.2rem;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+        
+        .winner-name {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .winner-message {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin: 0;
+        }
+        
+        /* Statistics Cards */
+        .stats-card {
+            background: var(--surface);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.35);
+            border-left: 4px solid;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        .stats-card.total-votes {
+            border-left-color: #28a745;
+        }
+        
+        .stats-card.candidates {
+            border-left-color: #17a2b8;
+        }
+        
+        .stats-card.turnout {
+            border-left-color: #dc3545;
+        }
+        
+        .stats-card.duration {
+            border-left-color: #007bff;
+        }
+        
+        .stats-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        
+        .stats-card.total-votes .stats-icon {
+            background: rgba(34,197,94,.15);
+            color: var(--success);
+        }
+        
+        .stats-card.candidates .stats-icon {
+            background: rgba(34,211,238,.15);
+            color: #22d3ee;
+        }
+        
+        .stats-card.turnout .stats-icon {
+            background: rgba(239,68,68,.15);
+            color: #f87171;
+        }
+        
+        .stats-card.duration .stats-icon {
+            background: rgba(96,165,250,.15);
+            color: #60a5fa;
+        }
+        
+        .stats-icon i {
+            font-size: 1.5rem;
+        }
+        
+        .stats-content h3 { font-size: 2rem; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+        
+        .stats-content p { color: var(--muted); font-weight: 500; margin: 0; }
+        
+        /* Chart and Results Sections */
+        .chart-section, .results-section {
+            background: var(--surface);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.35);
+            height: 100%;
+        }
+        
+        .section-title { color: var(--text); font-weight: 600; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #334155; }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Results List */
+        .results-list {
+            space-y: 15px;
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            background: var(--surface2);
+            transition: all 0.3s ease;
+        }
+        
+        .result-item.winner {
+            background: linear-gradient(135deg, rgba(34,197,94,.15) 0%, rgba(34,197,94,.25) 100%);
+            border: 2px solid var(--success);
+        }
+        
+        .result-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .candidate-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .candidate-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            background: var(--surface);
+        }
+        
+        .result-item.winner .candidate-icon {
+            background: #ffd700;
+            color: #2c3e50;
+        }
+        
+        .result-item:not(.winner) .candidate-icon {
+            background: #1f2937;
+            color: var(--muted);
+        }
+        
+        .candidate-name { font-weight: 600; color: var(--text); margin-bottom: 5px; }
+        
+        .winner-badge { background: var(--success); color: #031b0c; }
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+        
+        .candidate-votes { color: var(--muted); font-size: 0.9rem; margin: 0; }
+        
+        .candidate-percentage .percentage { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        
+        .result-item.winner .candidate-percentage .percentage { color: var(--success); }
+        .chart-container {
+            background: var(--surface);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+            margin-bottom: 20px;
+        }
+        .toggle-btn { background: transparent; border: 1px solid #374151; color: var(--text); border-radius: 8px; padding: 6px 10px; font-size: 1.1rem; }
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 250px;
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            #sidebar-title {
+                display: block !important;
+                font-size: 1.1rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .sidebar .d-flex {
+                flex-wrap: nowrap;
+            }
+            .sidebar .d-flex i {
+                flex-shrink: 0;
+            }
+            .sidebar .nav-link {
+                padding: 12px 15px;
+                font-size: 14px;
+            }
+            .sidebar .nav-link i {
+                font-size: 16px;
+                width: 20px;
+            }
+        }
+        
+        /* Desktop specific styles */
+        @media (min-width: 769px) {
+            .sidebar {
+                transform: translateX(0);
+            }
+            .sidebar.collapsed {
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-0">
+        <!-- Include Sidebar -->
+        {% include 'sidebar.html' %}
+
+        <!-- Main Content -->
+        <div class="main-content" id="main-content">
+            <!-- Dashboard Header -->
+            <div class="dashboard-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <button class="toggle-btn" id="sidebar-toggle">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h2 class="d-inline-block ms-3 mb-0">Election Dashboard</h2>
+                        <span class="text-muted ms-3">{{ election_title }}</span>
+                    </div>
+                    <div class="ms-auto">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-primary dropdown-toggle" type="button" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user me-2"></i>
+                                Admin
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                                <li>
+                                    <h6 class="dropdown-header">
+                                        <i class="fas fa-user-shield me-2"></i>
+                                        Administrator
+                                    </h6>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="fas fa-user me-2"></i>
+                                        Profile
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="fas fa-cog me-2"></i>
+                                        Settings
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="fas fa-bell me-2"></i>
+                                        Notifications
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'landing' %}">
+                                        <i class="fas fa-home me-2"></i>
+                                        Back to Home
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{% url 'admin_logout' %}">
+                                        <i class="fas fa-sign-out-alt me-2"></i>
+                                        Logout
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div class="container-fluid px-4">
+                <!-- Winner Announcement Card -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        {% if total_votes > 0 %}
+                        <div class="winner-card text-center">
+                            <div class="trophy-icon mb-3">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <h3 class="winner-label mb-2">Current Leader</h3>
+                            <h1 class="winner-name mb-2">{{ winner }}</h1>
+                            <p class="winner-message">Leading with the highest number of votes!</p>
+                        </div>
+                        {% else %}
+                        <div class="winner-card text-center" style="background: linear-gradient(135deg, #1f2937 0%, #111827 100%);">
+                            <div class="trophy-icon mb-3">
+                                <i class="fas fa-vote-yea"></i>
+                            </div>
+                            <h3 class="winner-label mb-2">No Votes Yet</h3>
+                            <h1 class="winner-name mb-2">Waiting for Votes</h1>
+                            <p class="winner-message">Results will appear once voting begins</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Statistics Cards -->
+                <div class="row mb-4">
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="stats-card total-votes">
+                            <div class="stats-icon">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="stats-content">
+                                <h3>{{ total_votes }}</h3>
+                                <p>Total Votes</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="stats-card candidates">
+                            <div class="stats-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stats-content">
+                                <h3>{{ candidate_count }}</h3>
+                                <p>Candidates</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="stats-card turnout">
+                            <div class="stats-icon">
+                                <i class="fas fa-percentage"></i>
+                            </div>
+                            <div class="stats-content">
+                                <h3>{{ turnout_pct }}%</h3>
+                                <p>Voter Turnout</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="stats-card duration">
+                            <div class="stats-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stats-content">
+                                <h3>{{ duration_hours }}h</h3>
+                                <p>Duration</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts and Results Section -->
+                <div class="row">
+                    <!-- Vote Distribution Chart -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="chart-section">
+                            <h5 class="section-title">
+                                <i class="fas fa-chart-pie me-2"></i>
+                                Vote Distribution
+                            </h5>
+                            <div class="chart-wrapper">
+                                <canvas id="voteChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Detailed Results -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="results-section">
+                            <h5 class="section-title">
+                                <i class="fas fa-list-alt me-2"></i>
+                                Detailed Results
+                            </h5>
+                            <div class="results-list">
+                                {% for candidate in overall %}
+                                <div class="result-item {% if forloop.first %}winner{% endif %}">
+                                    <div class="candidate-info">
+                                        <div class="candidate-icon">
+                                            {% if forloop.first %}
+                                                <i class="fas fa-crown"></i>
+                                            {% else %}
+                                                <i class="fas fa-user"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="candidate-details">
+                                            <h6 class="candidate-name">
+                                                {{ candidate.name }}
+                                                {% if forloop.first %}
+                                                    <span class="winner-badge">Winner</span>
+                                                {% endif %}
+                                            </h6>
+                                            <p class="candidate-votes">{{ candidate.votes }} votes</p>
+                                        </div>
+                                    </div>
+                                    <div class="candidate-percentage">
+                                        <span class="percentage">{{ candidate.percentage }}%</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section-wise Results -->
+                <div class="row">
+                    <div class="col-12 mb-4">
+                        <div class="results-section">
+                            <h5 class="section-title">
+                                <i class="fas fa-layer-group me-2"></i>
+                                Results by Section
+                            </h5>
+                            {% for section in grouped_sections %}
+                                <h6 class="mt-3">{{ section.position }} <span class="text-muted">(Total: {{ section.total }})</span></h6>
+                                <div class="results-list">
+                                    {% for row in section.rows %}
+                                    <div class="result-item {% if forloop.first %}winner{% endif %}">
+                                        <div class="candidate-info">
+                                            <div class="candidate-icon">
+                                                {% if forloop.first %}
+                                                    <i class="fas fa-crown"></i>
+                                                {% else %}
+                                                    <i class="fas fa-user"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div class="candidate-details">
+                                                <h6 class="candidate-name">
+                                                    {{ row.name }}
+                                                    {% if forloop.first %}
+                                                        <span class="winner-badge">Winner</span>
+                                                    {% endif %}
+                                                </h6>
+                                                <p class="candidate-votes">{{ row.votes }} votes</p>
+                                            </div>
+                                        </div>
+                                        <div class="candidate-percentage">
+                                            <span class="percentage">{{ row.percentage }}%</span>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+    <script>
+        // Sidebar toggle functionality
+        document.getElementById('sidebar-toggle').addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content');
+            
+            // Check if we're on mobile
+            if (window.innerWidth <= 768) {
+                // Mobile behavior - slide in/out
+                sidebar.classList.toggle('show');
+            } else {
+                // Desktop behavior - collapse/expand
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('collapsed');
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content');
+            
+            if (window.innerWidth <= 768) {
+                // Mobile view - remove collapsed classes
+                sidebar.classList.remove('collapsed');
+                mainContent.classList.remove('collapsed');
+            } else {
+                // Desktop view - remove show class
+                sidebar.classList.remove('show');
+            }
+        });
+
+        // Create pie chart for vote distribution
+        const ctx = document.getElementById('voteChart').getContext('2d');
+        const voteChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: [
+                    {% for c in overall %}
+                        '{{ c.name }}'{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                datasets: [{
+                    data: [
+                        {% for c in overall %}
+                            {{ c.votes }}{% if not forloop.last %},{% endif %}
+                        {% endfor %}
+                    ],
+                    backgroundColor: (function(){
+                        const palette = ['#60a5fa','#34d399','#f59e0b','#f472b6','#22d3ee','#a78bfa','#fb7185','#4ade80'];
+                        const len = {{ overall|length }};
+                        const colors = [];
+                        for (let i=0;i<len;i++){ colors.push(palette[i % palette.length]); }
+                        return colors;
+                    })(),
+                    borderWidth: 3,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 1.5,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': ' + context.parsed + ' votes (' + 
+                                       Math.round((context.parsed / {{ total_votes }}) * 100) + '%)';
+                            }
+                        }
+                    }
+                },
+                animation: false
+            }
+        });
+
+        // Add click event to sidebar navigation
+        document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Remove active class from all links
+                document.querySelectorAll('.sidebar .nav-link').forEach(l => l.classList.remove('active'));
+                // Add active class to clicked link
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

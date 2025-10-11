@@ -1,0 +1,50 @@
+{% load static %}
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+    <div class="p-3">
+        <div class="d-flex align-items-center mb-4">
+            <i class="fas fa-vote-yea text-white me-3" style="font-size: 1.5rem;"></i>
+            <span class="text-white fw-bold" id="sidebar-title">Admin Panel</span>
+        </div>
+        
+        <!-- Simple Navigation -->
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link active" href="{% url 'results' %}">
+                    <i class="fas fa-tachometer-alt me-3"></i>
+                    Dashboard
+                </a>
+            </li>+
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'public_results' %}">
+                    <i class="fas fa-chart-bar me-3"></i>
+                    Results
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'add_voters' %}">
+                    <i class="fas fa-users me-3"></i>
+                   Add Voters
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'add_candidates' %}">
+                    <i class="fas fa-user-plus me-3"></i>
+                    Add Candidates
+                </a>
+            </li>
+            <li class="nav-item mt-4">
+                <a class="nav-link" href="{% url 'admin_logout' %}">
+                    <i class="fas fa-sign-out-alt me-3"></i>
+                    Logout
+                </a>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'admin_change_password' %}">
+                    <i class="fas fa-key me-3"></i>
+                    Change Password
+                </a>
+            </li>
+            </li>
+        </ul>
+    </div>
+</nav>

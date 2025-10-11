@@ -1,0 +1,132 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Election Results - {{ election_title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Dark theme palette */
+        :root {
+            --bg: #0f172a;            /* slate-900 */
+            --surface: #111827;       /* gray-900 */
+            --surface-2: #1f2937;     /* gray-800 */
+            --text: #e5e7eb;          /* gray-200 */
+            --muted: #9ca3af;         /* gray-400 */
+            --primary: #60a5fa;       /* blue-400 */
+            --accent: #22d3ee;        /* cyan-400 */
+            --success: #22c55e;       /* green-500 */
+        }
+        body { background: var(--bg); color: var(--text); }
+
+        /* Sidebar layout helpers (fallback if global CSS absent) */
+        .sidebar { position: fixed; left: 0; top: 0; height: 100vh; width: 240px; background: linear-gradient(180deg, #0b1324 0%, #0f172a 100%); color: var(--text); overflow-y: auto; transform: translateX(0); transition: transform .2s ease; z-index: 1030; }
+        .sidebar .nav-link { color: rgba(229,231,235,0.9); }
+        .sidebar .nav-link:hover { color: #fff; }
+        .sidebar.show { transform: translateX(0); }
+        @media (max-width: 992px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.show { transform: translateX(0); box-shadow: 0 0 0 9999px rgba(0,0,0,.4); }
+        }
+
+        .content-with-sidebar { margin-left: 240px; width: 100%; transition: margin-left .2s ease; }
+        @media (max-width: 992px) { .content-with-sidebar { margin-left: 0; } }
+
+        .header { background: var(--surface); box-shadow: 0 2px 10px rgba(0,0,0,.35); padding: 16px 0; margin-bottom: 0; }
+        .breadcrumb-wrap { background: var(--surface-2); box-shadow: 0 1px 6px rgba(0,0,0,.35); }
+        .breadcrumb .breadcrumb-item a { color: var(--primary); text-decoration: none; }
+        .breadcrumb .breadcrumb-item.active { color: var(--muted); }
+
+        .btn-outline-secondary { color: var(--text); border-color: #374151; }
+        .btn-outline-secondary:hover { background: #374151; color: var(--text); }
+
+        .results-section { background: var(--surface); border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.35); padding: 20px; }
+        .result-item { display: flex; justify-content: space-between; align-items: center; background: var(--surface-2); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+        .winner .badge { background: var(--success); }
+        .text-muted { color: var(--muted) !important; }
+
+        .toggle-btn { background: transparent; border: 1px solid #374151; color: var(--text); border-radius: 8px; padding: 6px 10px; }
+        .toggle-btn:hover { background: #1f2937; }
+    </style>
+</head>
+<body>
+    <div class="d-flex">
+        {% include 'sidebar.html' %}
+        <div class="content-with-sidebar">
+    <div class="header">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <button class="toggle-btn d-lg-none" id="toggleSidebar"><i class="fas fa-bars"></i></button>
+                <h4 class="mb-0">Public Results</h4>
+            </div>
+            <a href="{% url 'landing' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-home me-1"></i> Home</a>
+        </div>
+    </div>
+    <div class="breadcrumb-wrap">
+        <div class="container py-2">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'landing' %}">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Results</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="container pb-5 pt-3">
+        <div class="results-section mb-4">
+            <h5 class="mb-3">Overall</h5>
+            {% for c in overall %}
+                <div class="result-item {% if forloop.first %}winner{% endif %}">
+                    <div>
+                        <strong>{{ c.name }}</strong>
+                        <span class="text-muted ms-2">({{ c.position }})</span>
+                        {% if forloop.first %}<span class="badge ms-2">Winner</span>{% endif %}
+                    </div>
+                    <div>
+                        <span class="me-3 text-muted">{{ c.votes }} votes</span>
+                        <strong>{{ c.percentage }}%</strong>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="text-muted">No votes yet</div>
+            {% endfor %}
+        </div>
+
+        <div class="results-section">
+            <h5 class="mb-3">By Section</h5>
+            {% for section in grouped_sections %}
+                <h6 class="mt-3">{{ section.position }} <span class="text-muted">(Total: {{ section.total }})</span></h6>
+                {% for row in section.rows %}
+                <div class="result-item {% if forloop.first %}winner{% endif %}">
+                    <div>
+                        <strong>{{ row.name }}</strong>
+                        {% if forloop.first %}<span class="badge ms-2">Winner</span>{% endif %}
+                    </div>
+                    <div>
+                        <span class="me-3 text-muted">{{ row.votes }} votes</span>
+                        <strong>{{ row.percentage }}%</strong>
+                    </div>
+                </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+        </div>
+    </div>
+
+    <script>
+        // Mobile sidebar toggle for responsiveness
+        const btn = document.getElementById('toggleSidebar');
+        if (btn) {
+            btn.addEventListener('click', function(){
+                const sb = document.getElementById('sidebar');
+                if (sb) sb.classList.toggle('show');
+            });
+        }
+    </script>
+</body>
+</html>
+
