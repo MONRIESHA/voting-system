@@ -367,46 +367,9 @@
             <div class="row justify-content-center">
                 <div class="col-lg-10">
                     <div class="election-card">
-                        <div class="election-icon">
-                            <i class="fas fa-vote-yea"></i>
-                        </div>
-                        
-                        <h2 class="election-title">Cast Your Vote</h2>
-                        <p class="election-description">
-                            Participate in the democratic process by voting for your preferred candidate.
-                            Your voice matters in shaping the future leadership of our organization.
-                        </p>
-
-                        <!-- Election Statistics -->
-                        <div class="stats-container">
-                            <div class="stat-item">
-                                <div class="stat-icon calendar">
-                                    <i class="fas fa-calendar-alt"></i>
-                                </div>
-                                <div class="stat-label">Election Ends</div>
-                                <div class="stat-value">{{ end_date }}</div>
-                            </div>
-                            
-                            <div class="stat-item">
-                                <div class="stat-icon candidates">
-                                    <i class="fas fa-users"></i>
-                                </div>
-                                <div class="stat-label">Candidates</div>
-                                <div class="stat-value">{{ candidate_count }}</div>
-                            </div>
-                            
-                            <div class="stat-item">
-                                <div class="stat-icon security">
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                                <div class="stat-label">Total Votes</div>
-                                <div class="stat-value">{{ total_votes }}</div>
-                            </div>
-                        </div>
-
                         <!-- Real-Time Results Section -->
                         {% if candidates %}
-                        <div style="margin-top: 50px;">
+                        <div>
                             <h3 style="text-align: center; color: var(--text); margin-bottom: 10px;">
                                 <i class="fas fa-chart-bar me-2"></i>Live Results
                             </h3>
