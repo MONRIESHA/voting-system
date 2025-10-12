@@ -168,6 +168,155 @@
         
         .footer { background: #0b1324; color: var(--text); padding: 40px 0; text-align: center; }
         
+        /* Candidates Grid Styles */
+        .candidates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .candidate-card {
+            background: #0b1324;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(56,189,248,.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .candidate-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(56,189,248,.2);
+            border-color: rgba(56,189,248,.3);
+        }
+        
+        .winner-card {
+            border-color: rgba(34,197,94,.5);
+            background: linear-gradient(135deg, rgba(34,197,94,.05) 0%, rgba(74,222,128,.1) 100%);
+            box-shadow: 0 10px 30px rgba(34,197,94,.2);
+        }
+        
+        .winner-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #1f2937;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            box-shadow: 0 5px 15px rgba(251,191,36,.4);
+            animation: pulse-crown 2s infinite;
+        }
+        
+        @keyframes pulse-crown {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .candidate-photo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            overflow: hidden;
+            border: 4px solid rgba(56,189,248,.3);
+            background: var(--surface);
+        }
+        
+        .candidate-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .photo-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: rgba(56,189,248,.3);
+            background: linear-gradient(135deg, rgba(56,189,248,.1) 0%, rgba(14,165,233,.15) 100%);
+        }
+        
+        .candidate-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 5px;
+        }
+        
+        .candidate-nickname {
+            font-size: 0.9rem;
+            color: var(--sky2);
+            font-style: italic;
+            margin-bottom: 5px;
+        }
+        
+        .candidate-position {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 20px;
+            padding: 5px 15px;
+            background: rgba(56,189,248,.1);
+            border-radius: 20px;
+            display: inline-block;
+        }
+        
+        .vote-stats {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(56,189,248,.2);
+        }
+        
+        .vote-count {
+            font-size: 1.1rem;
+            color: var(--text);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .count-number {
+            font-size: 1.8rem;
+            color: var(--sky2);
+            font-weight: 700;
+        }
+        
+        .progress-bar-container {
+            width: 100%;
+            height: 30px;
+            background: rgba(56,189,248,.1);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--sky2) 0%, var(--sky1) 100%);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: width 0.5s ease;
+            min-width: 40px;
+        }
+        
+        .progress-percentage {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #031b0c;
+        }
+        
         @media (max-width: 768px) {
             .hero-title {
                 font-size: 2.5rem;
@@ -190,6 +339,11 @@
             .btn-secondary-custom {
                 width: 100%;
                 max-width: 300px;
+            }
+            
+            .candidates-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
             }
         }
     </style>
@@ -243,12 +397,89 @@
                             
                             <div class="stat-item">
                                 <div class="stat-icon security">
-                                    <i class="fas fa-shield-alt"></i>
+                                    <i class="fas fa-check-circle"></i>
                                 </div>
-                                <div class="stat-label">Security</div>
-                                <div class="stat-value">SMS Verified</div>
+                                <div class="stat-label">Total Votes</div>
+                                <div class="stat-value">{{ total_votes }}</div>
                             </div>
                         </div>
+
+                        <!-- Real-Time Results Section -->
+                        {% if candidates %}
+                        <div style="margin-top: 50px;">
+                            <h3 style="text-align: center; color: var(--text); margin-bottom: 10px;">
+                                <i class="fas fa-chart-bar me-2"></i>Live Results
+                            </h3>
+                            <p style="text-align: center; color: var(--muted); margin-bottom: 30px; font-size: 0.9rem;">
+                                <i class="fas fa-sync-alt me-1"></i>Auto-refreshing every 10 seconds
+                            </p>
+
+                            <!-- Winner Announcement -->
+                            {% if winner and not is_tie %}
+                            <div style="background: linear-gradient(135deg, rgba(34,197,94,.15) 0%, rgba(74,222,128,.25) 100%); border-radius: 15px; padding: 20px; margin-bottom: 30px; text-align: center; border: 2px solid rgba(34,197,94,.3);">
+                                <h4 style="color: #4ade80; margin-bottom: 10px;">
+                                    <i class="fas fa-trophy me-2"></i>Current Leader
+                                </h4>
+                                <h2 style="color: var(--text); margin: 0;">{{ winner.name }}</h2>
+                                <p style="color: var(--muted); margin-top: 5px;">{{ winner.votes }} votes ({{ winner.percentage }}%)</p>
+                            </div>
+                            {% elif is_tie %}
+                            <div style="background: linear-gradient(135deg, rgba(234,179,8,.15) 0%, rgba(253,224,71,.25) 100%); border-radius: 15px; padding: 20px; margin-bottom: 30px; text-align: center; border: 2px solid rgba(234,179,8,.3);">
+                                <h4 style="color: #fde047; margin: 0;">
+                                    <i class="fas fa-balance-scale me-2"></i>It's a Tie!
+                                </h4>
+                            </div>
+                            {% endif %}
+
+                            <!-- Candidates Grid -->
+                            <div class="candidates-grid">
+                                {% for candidate in candidates %}
+                                <div class="candidate-card {% if winner and candidate.id == winner.id and not is_tie %}winner-card{% endif %}">
+                                    {% if winner and candidate.id == winner.id and not is_tie %}
+                                    <div class="winner-badge">
+                                        <i class="fas fa-crown"></i>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="candidate-photo">
+                                        {% if candidate.photo %}
+                                        <img src="{{ candidate.photo.url }}" alt="{{ candidate.name }}">
+                                        {% else %}
+                                        <div class="photo-placeholder">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <h4 class="candidate-name">{{ candidate.name }}</h4>
+                                    {% if candidate.nickname %}
+                                    <p class="candidate-nickname">"{{ candidate.nickname }}"</p>
+                                    {% endif %}
+                                    <p class="candidate-position">{{ candidate.position }}</p>
+                                    
+                                    <div class="vote-stats">
+                                        <div class="vote-count">
+                                            <i class="fas fa-vote-yea me-2"></i>
+                                            <span class="count-number">{{ candidate.votes }}</span> votes
+                                        </div>
+                                        
+                                        <!-- Progress Bar -->
+                                        <div class="progress-bar-container">
+                                            <div class="progress-bar-fill" style="width: {{ candidate.percentage }}%;">
+                                                <span class="progress-percentage">{{ candidate.percentage }}%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div style="text-align: center; padding: 40px; color: var(--muted);">
+                            <i class="fas fa-users-slash" style="font-size: 3rem; opacity: 0.3; margin-bottom: 20px;"></i>
+                            <p>No candidates registered yet</p>
+                        </div>
+                        {% endif %}
 
                         <!-- Action Buttons -->
                         <div class="action-buttons">
@@ -304,5 +535,37 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'js/main.js' %}"></script>
+    
+    <script>
+        // Auto-refresh page every 10 seconds for real-time results
+        let refreshInterval = setInterval(function() {
+            location.reload();
+        }, 10000); // 10 seconds
+        
+        // Optional: Pause auto-refresh when user is interacting
+        let userActivity = false;
+        let activityTimeout;
+        
+        document.addEventListener('mousemove', function() {
+            userActivity = true;
+            clearTimeout(activityTimeout);
+            activityTimeout = setTimeout(function() {
+                userActivity = false;
+            }, 3000); // Resume auto-refresh after 3 seconds of no activity
+        });
+        
+        // Smooth scroll for animations
+        window.addEventListener('load', function() {
+            document.querySelectorAll('.candidate-card').forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
 </body>
 </html>

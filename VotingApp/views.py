@@ -10,13 +10,47 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 def landing_page(request):
-    """Landing page for the chairperson election"""
+    """Landing page for the chairperson election with real-time results"""
+    # Get all candidates with their vote counts
+    candidates_qs = Candidate.objects.annotate(votes_count=Count('vote')).order_by('-votes_count', 'name')
+    
+    # Calculate total votes cast
+    total_votes = Vote.objects.count()
+    total_voters = Voter.objects.count()
+    
+    # Build candidate list with percentages
+    candidates_data = []
+    for c in candidates_qs:
+        percentage = round((c.votes_count / total_votes) * 100, 1) if total_votes else 0
+        candidates_data.append({
+            'id': c.id,
+            'name': c.name,
+            'nickname': c.nickname,
+            'position': c.position,
+            'photo': c.photo,
+            'votes': c.votes_count,
+            'percentage': percentage,
+        })
+    
+    # Determine winner (candidate with most votes)
+    winner = candidates_data[0] if candidates_data and total_votes > 0 else None
+    
+    # Check if there's a clear winner or tie
+    is_tie = False
+    if len(candidates_data) >= 2 and candidates_data[0]['votes'] == candidates_data[1]['votes'] and candidates_data[0]['votes'] > 0:
+        is_tie = True
+    
     context = {
         'election_title': 'Chairperson Election 2025',
         'election_description': 'Vote for your preferred candidate for the position of Chairperson',
         'election_status': 'Active',
         'end_date': 'September 2025',
-        'candidate_count': 2,
+        'candidate_count': candidates_qs.count(),
+        'candidates': candidates_data,
+        'total_votes': total_votes,
+        'total_voters': total_voters,
+        'winner': winner,
+        'is_tie': is_tie,
     }
     return render(request, 'landing.html', context)
 
