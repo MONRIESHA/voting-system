@@ -168,6 +168,85 @@
         
         .footer { background: #0b1324; color: var(--text); padding: 40px 0; text-align: center; }
         
+        /* Countdown Timer Styles */
+        .countdown-timer {
+            margin-top: 40px;
+            padding: 30px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .countdown-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #031b0c;
+        }
+        
+        .countdown-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .countdown-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 80px;
+        }
+        
+        .countdown-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #031b0c;
+            line-height: 1;
+        }
+        
+        .countdown-label {
+            font-size: 0.85rem;
+            color: rgba(3,27,12,0.8);
+            margin-top: 5px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        .countdown-separator {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #031b0c;
+            padding: 0 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .countdown-timer {
+                padding: 20px 15px;
+            }
+            
+            .countdown-display {
+                gap: 5px;
+            }
+            
+            .countdown-item {
+                min-width: 60px;
+            }
+            
+            .countdown-value {
+                font-size: 1.8rem;
+            }
+            
+            .countdown-label {
+                font-size: 0.7rem;
+            }
+            
+            .countdown-separator {
+                font-size: 1.5rem;
+            }
+        }
+        
         /* Candidates Grid Styles */
         .candidates-grid {
             display: grid;
@@ -358,6 +437,41 @@
             </div>
             <h1 class="hero-title">{{ election_title }}</h1>
             <p class="hero-subtitle">{{ election_description }}</p>
+            
+            <!-- Countdown Timer -->
+            {% if end_time and election_status != 'Ended' %}
+            <div class="countdown-timer" id="countdown-timer">
+                <div class="countdown-title">
+                    <i class="fas fa-clock me-2"></i>
+                    {% if election_status == 'Not Started' %}
+                        Voting Starts In:
+                    {% else %}
+                        Voting Ends In:
+                    {% endif %}
+                </div>
+                <div class="countdown-display" id="countdown-display">
+                    <div class="countdown-item">
+                        <span class="countdown-value" id="days">0</span>
+                        <span class="countdown-label">Days</span>
+                    </div>
+                    <div class="countdown-separator">:</div>
+                    <div class="countdown-item">
+                        <span class="countdown-value" id="hours">0</span>
+                        <span class="countdown-label">Hours</span>
+                    </div>
+                    <div class="countdown-separator">:</div>
+                    <div class="countdown-item">
+                        <span class="countdown-value" id="minutes">0</span>
+                        <span class="countdown-label">Minutes</span>
+                    </div>
+                    <div class="countdown-separator">:</div>
+                    <div class="countdown-item">
+                        <span class="countdown-value" id="seconds">0</span>
+                        <span class="countdown-label">Seconds</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </section>
 
@@ -368,7 +482,7 @@
                 <div class="col-lg-10">
                     <div class="election-card">
                         <!-- Real-Time Results Section -->
-                        {% if candidates %}
+                        {% if candidates_by_position %}
                         <div>
                             <h3 style="text-align: center; color: var(--text); margin-bottom: 10px;">
                                 <i class="fas fa-chart-bar me-2"></i>Live Results
@@ -377,28 +491,30 @@
                                 <i class="fas fa-sync-alt me-1"></i>Auto-refreshing every 10 seconds
                             </p>
 
-                            <!-- Winner Announcement -->
-                            {% if winner and not is_tie %}
+                            <!-- Loop through each position -->
+                            {% for position, candidates in candidates_by_position.items %}
+                            
+                            <!-- Position Title -->
+                            <h2 style="text-align: center; color: var(--sky2); margin-top: {% if not forloop.first %}50px{% else %}20px{% endif %}; margin-bottom: 20px; font-size: 1.8rem;">
+                                <i class="fas fa-award me-2"></i>{{ position }}
+                            </h2>
+
+                            <!-- Winner Announcement for this position -->
+                            {% if candidates.0.is_winner %}
                             <div style="background: linear-gradient(135deg, rgba(34,197,94,.15) 0%, rgba(74,222,128,.25) 100%); border-radius: 15px; padding: 20px; margin-bottom: 30px; text-align: center; border: 2px solid rgba(34,197,94,.3);">
                                 <h4 style="color: #4ade80; margin-bottom: 10px;">
                                     <i class="fas fa-trophy me-2"></i>Current Leader
                                 </h4>
-                                <h2 style="color: var(--text); margin: 0;">{{ winner.name }}</h2>
-                                <p style="color: var(--muted); margin-top: 5px;">{{ winner.votes }} votes ({{ winner.percentage }}%)</p>
-                            </div>
-                            {% elif is_tie %}
-                            <div style="background: linear-gradient(135deg, rgba(234,179,8,.15) 0%, rgba(253,224,71,.25) 100%); border-radius: 15px; padding: 20px; margin-bottom: 30px; text-align: center; border: 2px solid rgba(234,179,8,.3);">
-                                <h4 style="color: #fde047; margin: 0;">
-                                    <i class="fas fa-balance-scale me-2"></i>It's a Tie!
-                                </h4>
+                                <h2 style="color: var(--text); margin: 0;">{{ candidates.0.name }}</h2>
+                                <p style="color: var(--muted); margin-top: 5px;">{{ candidates.0.votes }} votes ({{ candidates.0.percentage }}%)</p>
                             </div>
                             {% endif %}
 
-                            <!-- Candidates Grid -->
+                            <!-- Candidates Grid for this position -->
                             <div class="candidates-grid">
                                 {% for candidate in candidates %}
-                                <div class="candidate-card {% if winner and candidate.id == winner.id and not is_tie %}winner-card{% endif %}">
-                                    {% if winner and candidate.id == winner.id and not is_tie %}
+                                <div class="candidate-card {% if candidate.is_winner %}winner-card{% endif %}">
+                                    {% if candidate.is_winner %}
                                     <div class="winner-badge">
                                         <i class="fas fa-crown"></i>
                                     </div>
@@ -436,6 +552,13 @@
                                 </div>
                                 {% endfor %}
                             </div>
+
+                            <!-- Horizontal Line Separator (except after last position) -->
+                            {% if not forloop.last %}
+                            <hr style="border: none; border-top: 3px solid rgba(56,189,248,.3); margin: 50px auto; width: 80%; border-radius: 2px;">
+                            {% endif %}
+
+                            {% endfor %}
                         </div>
                         {% else %}
                         <div style="text-align: center; padding: 40px; color: var(--muted);">
@@ -500,6 +623,36 @@
     <script src="{% static 'js/main.js' %}"></script>
     
     <script>
+        // Countdown Timer
+        {% if end_time %}
+        const targetDate = new Date("{{ end_time|date:'c' }}").getTime();
+        
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = targetDate - now;
+            
+            if (distance < 0) {
+                document.getElementById('countdown-timer').innerHTML = '<div class="countdown-title"><i class="fas fa-check-circle me-2"></i>Voting Has Ended</div>';
+                clearInterval(countdownInterval);
+                return;
+            }
+            
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            document.getElementById('days').textContent = days.toString().padStart(2, '0');
+            document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+            document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+            document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+        }
+        
+        // Update countdown immediately and then every second
+        updateCountdown();
+        const countdownInterval = setInterval(updateCountdown, 1000);
+        {% endif %}
+        
         // Auto-refresh page every 10 seconds for real-time results
         let refreshInterval = setInterval(function() {
             location.reload();

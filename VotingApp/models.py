@@ -110,3 +110,28 @@ class AdminUser(models.Model):
     
     def __str__(self):
         return f"Admin: {self.user.username}"
+
+
+class ElectionSettings(models.Model):
+    """Model to store election settings"""
+    election_title = models.CharField(max_length=200, default='Porpon Young Generation Chairman and Lady Election')
+    election_description = models.TextField(default='Vote for your preferred candidate for the position of Chairman and Lady')
+    start_time = models.DateTimeField(null=True, blank=True, help_text='When voting starts')
+    end_time = models.DateTimeField(null=True, blank=True, help_text='When voting ends')
+    timezone = models.CharField(max_length=50, default='UTC', help_text='Timezone for the election (e.g., UTC, America/New_York, Africa/Freetown)')
+    is_active = models.BooleanField(default=True, help_text='Is voting currently active?')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Election Settings'
+        verbose_name_plural = 'Election Settings'
+    
+    def __str__(self):
+        return f"Election Settings - {self.election_title}"
+    
+    @classmethod
+    def get_settings(cls):
+        """Get or create election settings"""
+        settings, created = cls.objects.get_or_create(id=1)
+        return settings

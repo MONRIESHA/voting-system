@@ -3,26 +3,28 @@ from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as auth_login
 from django.contrib.auth.models import User
-from .models import Voter, Candidate, Vote, AdminUser
+from .models import Voter, Candidate, Vote, AdminUser, ElectionSettings
 from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
+import pytz
+from datetime import datetime
 
 def landing_page(request):
     """Landing page for the chairperson election with real-time results"""
     # Get all candidates with their vote counts
-    candidates_qs = Candidate.objects.annotate(votes_count=Count('vote')).order_by('-votes_count', 'name')
+    candidates_qs = Candidate.objects.annotate(votes_count=Count('vote')).order_by('position', '-votes_count', 'name')
     
     # Calculate total votes cast
     total_votes = Vote.objects.count()
     total_voters = Voter.objects.count()
     
-    # Build candidate list with percentages
-    candidates_data = []
+    # Build candidate list with percentages and group by position
+    candidates_by_position = {}
     for c in candidates_qs:
         percentage = round((c.votes_count / total_votes) * 100, 1) if total_votes else 0
-        candidates_data.append({
+        candidate_data = {
             'id': c.id,
             'name': c.name,
             'nickname': c.nickname,
@@ -30,27 +32,57 @@ def landing_page(request):
             'photo': c.photo,
             'votes': c.votes_count,
             'percentage': percentage,
-        })
+            'is_winner': False,  # Will be set below
+        }
+        
+        if c.position not in candidates_by_position:
+            candidates_by_position[c.position] = []
+        candidates_by_position[c.position].append(candidate_data)
     
-    # Determine winner (candidate with most votes)
-    winner = candidates_data[0] if candidates_data and total_votes > 0 else None
+    # Mark winners for each position
+    for position, candidates in candidates_by_position.items():
+        if candidates and candidates[0]['votes'] > 0:
+            # Check if there's a tie (top 2 candidates have same votes)
+            is_tie = len(candidates) >= 2 and candidates[0]['votes'] == candidates[1]['votes']
+            # Mark the first candidate as winner only if no tie
+            if not is_tie:
+                candidates[0]['is_winner'] = True
     
-    # Check if there's a clear winner or tie
-    is_tie = False
-    if len(candidates_data) >= 2 and candidates_data[0]['votes'] == candidates_data[1]['votes'] and candidates_data[0]['votes'] > 0:
-        is_tie = True
+    # Determine winner per position
+    winners = {}
+    for position, candidates in candidates_by_position.items():
+        if candidates and candidates[0]['votes'] > 0:
+            # Check for tie in this position
+            is_tie = len(candidates) >= 2 and candidates[0]['votes'] == candidates[1]['votes']
+            winners[position] = {
+                'candidate': candidates[0] if not is_tie else None,
+                'is_tie': is_tie
+            }
+    
+    # Get election settings
+    settings = ElectionSettings.get_settings()
+    
+    # Determine election status
+    now = timezone.now()
+    election_status = 'Active'
+    if settings.end_time:
+        if now > settings.end_time:
+            election_status = 'Ended'
+        elif settings.start_time and now < settings.start_time:
+            election_status = 'Not Started'
     
     context = {
-        'election_title': 'Porpon Young Generation Chairman and Lady Election',
-        'election_description': 'Vote for your preferred candidate for the position of Chairman and Lady',
-        'election_status': 'Active',
-        'end_date': 'September 2025',
+        'election_title': settings.election_title,
+        'election_description': settings.election_description,
+        'election_status': election_status,
+        'end_time': settings.end_time,
+        'start_time': settings.start_time,
+        'timezone_name': settings.timezone,
         'candidate_count': candidates_qs.count(),
-        'candidates': candidates_data,
+        'candidates_by_position': candidates_by_position,
         'total_votes': total_votes,
         'total_voters': total_voters,
-        'winner': winner,
-        'is_tie': is_tie,
+        'winners': winners,
     }
     return render(request, 'landing.html', context)
 
@@ -445,3 +477,70 @@ def vote(request):
     for c in candidates:
         grouped.setdefault(c.position, []).append(c)
     return render(request, 'vote.html', { 'grouped': grouped, 'voter_phone': voter_phone })
+
+
+@require_http_methods(["GET", "POST"])
+def election_settings(request):
+    """Election settings page - Admin only"""
+    if not request.session.get('is_admin'):
+        messages.error(request, 'Please login as admin to access this page')
+        return redirect('admin_login')
+    
+    settings = ElectionSettings.get_settings()
+    
+    if request.method == 'POST':
+        # Update settings
+        settings.election_title = request.POST.get('election_title', settings.election_title)
+        settings.election_description = request.POST.get('election_description', settings.election_description)
+        settings.timezone = request.POST.get('timezone', settings.timezone)
+        settings.is_active = request.POST.get('is_active') == 'on'
+        
+        # Handle start_time
+        start_time_str = request.POST.get('start_time')
+        if start_time_str:
+            try:
+                # Parse the datetime string
+                naive_start = datetime.strptime(start_time_str, '%Y-%m-%dT%H:%M')
+                # Make it timezone aware
+                tz = pytz.timezone(settings.timezone)
+                settings.start_time = tz.localize(naive_start)
+            except (ValueError, pytz.exceptions.UnknownTimeZoneError) as e:
+                messages.error(request, f'Invalid start time or timezone: {e}')
+        
+        # Handle end_time
+        end_time_str = request.POST.get('end_time')
+        if end_time_str:
+            try:
+                naive_end = datetime.strptime(end_time_str, '%Y-%m-%dT%H:%M')
+                tz = pytz.timezone(settings.timezone)
+                settings.end_time = tz.localize(naive_end)
+            except (ValueError, pytz.exceptions.UnknownTimeZoneError) as e:
+                messages.error(request, f'Invalid end time or timezone: {e}')
+        
+        settings.save()
+        messages.success(request, 'Election settings updated successfully!')
+        return redirect('election_settings')
+    
+    # Get common timezones for the dropdown
+    common_timezones = [
+        'UTC',
+        'Africa/Freetown',  # Sierra Leone
+        'Africa/Lagos',  # Nigeria
+        'Africa/Accra',  # Ghana
+        'Europe/London',
+        'America/New_York',
+        'America/Los_Angeles',
+        'Asia/Dubai',
+    ]
+    
+    # Format datetime for HTML input
+    start_time_formatted = settings.start_time.strftime('%Y-%m-%dT%H:%M') if settings.start_time else ''
+    end_time_formatted = settings.end_time.strftime('%Y-%m-%dT%H:%M') if settings.end_time else ''
+    
+    context = {
+        'settings': settings,
+        'common_timezones': common_timezones,
+        'start_time_formatted': start_time_formatted,
+        'end_time_formatted': end_time_formatted,
+    }
+    return render(request, 'election_settings.html', context)

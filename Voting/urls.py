@@ -34,6 +34,7 @@ urlpatterns = [
     path('vote/', views.vote, name='vote'),
     path('public-results/', views.public_results, name='public_results'),
     path('admin-change-password/', views.admin_change_password, name='admin_change_password'),
+    path('election-settings/', views.election_settings, name='election_settings'),
 ]
 
 if settings.DEBUG:
