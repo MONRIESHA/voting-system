@@ -41,8 +41,8 @@ def landing_page(request):
         is_tie = True
     
     context = {
-        'election_title': 'Chairperson Election 2025',
-        'election_description': 'Vote for your preferred candidate for the position of Chairperson',
+        'election_title': 'Porpon Young Generation Chairman and Lady Election',
+        'election_description': 'Vote for your preferred candidate for the position of Chairman and Lady',
         'election_status': 'Active',
         'end_date': 'September 2025',
         'candidate_count': candidates_qs.count(),
