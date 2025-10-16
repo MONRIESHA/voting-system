@@ -569,13 +569,25 @@
 
                         <!-- Action Buttons -->
                         <div class="action-buttons">
-                            <a href="{% url 'login' %}" class="btn-primary-custom">
-                                <i class="fas fa-sign-in-alt me-2"></i>
-                                Vote
-                            </a>
+                            {% if election_status == 'Active' %}
+                                <a href="{% url 'login' %}" class="btn-primary-custom">
+                                    <i class="fas fa-sign-in-alt me-2"></i>
+                                    Vote Now
+                                </a>
+                            {% elif election_status == 'Not Started' %}
+                                <button class="btn-primary-custom" disabled style="opacity: 0.6; cursor: not-allowed;">
+                                    <i class="fas fa-clock me-2"></i>
+                                    Voting Not Started
+                                </button>
+                            {% elif election_status == 'Ended' %}
+                                <button class="btn-primary-custom" disabled style="opacity: 0.6; cursor: not-allowed; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                                    <i class="fas fa-ban me-2"></i>
+                                    Voting Has Ended
+                                </button>
+                            {% endif %}
                             <a href="{% url 'admin_login' %}" class="btn-secondary-custom">
                                 <i class="fas fa-user-shield me-2"></i>
-                                Login
+                                Admin Login
                             </a>
                         </div>
                     </div>

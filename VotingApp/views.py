@@ -88,6 +88,25 @@ def landing_page(request):
 
 def login_page(request):
     """Login page for phone number entry"""
+    # Check election settings
+    settings = ElectionSettings.get_settings()
+    now = timezone.now()
+    
+    # Check if voting is active
+    if not settings.is_active:
+        messages.error(request, 'Voting is currently disabled.')
+        return redirect('landing')
+    
+    # Check if voting has started
+    if settings.start_time and now < settings.start_time:
+        messages.error(request, f'Voting has not started yet. Please come back after {settings.start_time.strftime("%B %d, %Y at %I:%M %p")}.')
+        return redirect('landing')
+    
+    # Check if voting has ended
+    if settings.end_time and now > settings.end_time:
+        messages.error(request, f'Voting has ended on {settings.end_time.strftime("%B %d, %Y at %I:%M %p")}.')
+        return redirect('landing')
+    
     if request.method == 'POST':
         phone = request.POST.get('phone_number', '').strip()
         normalized = Voter.normalize_phone_number(phone)
@@ -453,6 +472,25 @@ def vote(request):
     if not voter:
         messages.error(request, 'Voter not found')
         return redirect('login')
+
+    # Check election settings - if voting is allowed
+    settings = ElectionSettings.get_settings()
+    now = timezone.now()
+    
+    # Check if voting is active
+    if not settings.is_active:
+        messages.error(request, 'Voting is currently disabled by the administrator.')
+        return redirect('landing')
+    
+    # Check if voting has started
+    if settings.start_time and now < settings.start_time:
+        messages.error(request, f'Voting has not started yet. Please come back after {settings.start_time.strftime("%B %d, %Y at %I:%M %p")}.')
+        return redirect('landing')
+    
+    # Check if voting has ended
+    if settings.end_time and now > settings.end_time:
+        messages.error(request, f'Voting has ended on {settings.end_time.strftime("%B %d, %Y at %I:%M %p")}. Thank you for your interest.')
+        return redirect('landing')
 
     if request.method == 'POST':
         candidate_id = request.POST.get('candidate_id')
