@@ -41,6 +41,19 @@
 
         .btn-outline-secondary { color: var(--text); border-color: #374151; }
         .btn-outline-secondary:hover { background: #374151; color: var(--text); }
+        
+        .btn-success { 
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); 
+            border: none; 
+            color: #fff;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-success:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 15px rgba(34,197,94,.3);
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        }
 
         .results-section { background: var(--surface); border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.35); padding: 20px; }
         .result-item { display: flex; justify-content: space-between; align-items: center; background: var(--surface-2); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
@@ -61,7 +74,14 @@
                 <button class="toggle-btn d-lg-none" id="toggleSidebar"><i class="fas fa-bars"></i></button>
                 <h4 class="mb-0">Public Results</h4>
             </div>
-            <a href="{% url 'landing' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-home me-1"></i> Home</a>
+            <div class="d-flex gap-2">
+                <a href="{% url 'download_results' %}" class="btn btn-success btn-sm">
+                    <i class="fas fa-download me-1"></i> Download CSV
+                </a>
+                <a href="{% url 'landing' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-home me-1"></i> Home
+                </a>
+            </div>
         </div>
     </div>
     <div class="breadcrumb-wrap">
@@ -76,6 +96,19 @@
     </div>
 
     <div class="container pb-5 pt-3">
+        <!-- Download Info -->
+        <div style="background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.3); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-info-circle me-3" style="color: #22c55e; font-size: 1.5rem;"></i>
+                <div>
+                    <strong style="color: #22c55e;">Download Complete Analysis</strong>
+                    <p class="mb-0 mt-1" style="font-size: 0.9rem; color: var(--muted);">
+                        CSV file includes: Summary statistics, overall results, results by position, winner detection, and detailed vote log with timestamps.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
         <div class="results-section mb-4">
             <h5 class="mb-3">Overall</h5>
             {% for c in overall %}

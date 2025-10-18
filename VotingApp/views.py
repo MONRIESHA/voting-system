@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 import pytz
 from datetime import datetime
+import csv
 
 def landing_page(request):
     """Landing page for the chairperson election with real-time results"""
@@ -582,3 +583,96 @@ def election_settings(request):
         'end_time_formatted': end_time_formatted,
     }
     return render(request, 'election_settings.html', context)
+
+
+def download_results(request):
+    """Download election results as CSV"""
+    # Get election settings
+    settings = ElectionSettings.get_settings()
+    
+    # Calculate statistics
+    total_votes = Vote.objects.count()
+    total_voters = Voter.objects.count()
+    unique_voters_voted = Vote.objects.values('voter_id').distinct().count()
+    turnout_pct = round((unique_voters_voted / total_voters) * 100, 2) if total_voters else 0
+    
+    # Get candidates with vote counts
+    candidates_qs = Candidate.objects.annotate(votes_count=Count('vote')).order_by('position', '-votes_count', 'name')
+    
+    # Create the HttpResponse object with CSV header
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="election_results_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+    
+    writer = csv.writer(response)
+    
+    # Write header information
+    writer.writerow(['ELECTION RESULTS REPORT'])
+    writer.writerow([])
+    writer.writerow(['Election Title:', settings.election_title])
+    writer.writerow(['Generated On:', timezone.now().strftime('%B %d, %Y at %I:%M %p')])
+    writer.writerow(['Timezone:', settings.timezone])
+    writer.writerow([])
+    
+    # Write summary statistics
+    writer.writerow(['SUMMARY STATISTICS'])
+    writer.writerow(['Total Votes Cast:', total_votes])
+    writer.writerow(['Total Registered Voters:', total_voters])
+    writer.writerow(['Voters Who Voted:', unique_voters_voted])
+    writer.writerow(['Turnout Percentage:', f'{turnout_pct}%'])
+    writer.writerow([])
+    
+    # Write overall results
+    writer.writerow(['OVERALL RESULTS'])
+    writer.writerow(['Rank', 'Candidate Name', 'Position', 'Votes', 'Percentage'])
+    
+    rank = 1
+    for c in candidates_qs:
+        percentage = round((c.votes_count / total_votes) * 100, 1) if total_votes else 0
+        writer.writerow([rank, c.name, c.position, c.votes_count, f'{percentage}%'])
+        rank += 1
+    
+    writer.writerow([])
+    
+    # Write results by position
+    writer.writerow(['RESULTS BY POSITION'])
+    writer.writerow([])
+    
+    # Group by position
+    by_position = {}
+    for c in candidates_qs:
+        if c.position not in by_position:
+            by_position[c.position] = []
+        percentage = round((c.votes_count / total_votes) * 100, 1) if total_votes else 0
+        by_position[c.position].append({
+            'name': c.name,
+            'votes': c.votes_count,
+            'percentage': percentage
+        })
+    
+    for position, candidates in by_position.items():
+        writer.writerow([f'Position: {position}'])
+        writer.writerow(['Rank', 'Candidate Name', 'Votes', 'Percentage', 'Status'])
+        
+        for idx, c in enumerate(candidates, 1):
+            status = 'WINNER' if idx == 1 and c['votes'] > 0 else ''
+            # Check for tie
+            if idx == 1 and len(candidates) >= 2 and candidates[0]['votes'] == candidates[1]['votes']:
+                status = 'TIE'
+            writer.writerow([idx, c['name'], c['votes'], f"{c['percentage']}%", status])
+        
+        writer.writerow([])
+    
+    # Write vote details
+    writer.writerow(['DETAILED VOTE LOG'])
+    writer.writerow(['Voter Phone', 'Candidate', 'Position', 'Voted At'])
+    
+    votes = Vote.objects.select_related('voter', 'candidate').order_by('-voted_at')
+    for vote in votes:
+        writer.writerow([
+            vote.voter.phone_number,
+            vote.candidate.name,
+            vote.candidate.position,
+            vote.voted_at.strftime('%B %d, %Y at %I:%M %p')
+        ])
+    
+    return response

@@ -325,7 +325,10 @@
                         <h2 class="d-inline-block ms-3 mb-0">Election Dashboard</h2>
                         <span class="text-muted ms-3">{{ election_title }}</span>
                     </div>
-                    <div class="ms-auto">
+                    <div class="ms-auto d-flex gap-2 align-items-center">
+                        <a href="{% url 'download_results' %}" class="btn btn-success btn-sm">
+                            <i class="fas fa-download me-2"></i>Download Results
+                        </a>
                         <div class="dropdown">
                             <button class="btn btn-outline-primary dropdown-toggle" type="button" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-user me-2"></i>
