@@ -11,6 +11,13 @@ from django.views.decorators.http import require_http_methods
 import pytz
 from datetime import datetime
 import csv
+from io import BytesIO
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 
 def landing_page(request):
     """Landing page for the chairperson election with real-time results"""
@@ -674,5 +681,193 @@ def download_results(request):
             vote.candidate.position,
             vote.voted_at.strftime('%B %d, %Y at %I:%M %p')
         ])
+    
+    return response
+
+
+def download_results_pdf(request):
+    """Download election results as PDF with complete analysis"""
+    # Get election settings
+    settings = ElectionSettings.get_settings()
+    
+    # Calculate statistics
+    total_votes = Vote.objects.count()
+    total_voters = Voter.objects.count()
+    unique_voters_voted = Vote.objects.values('voter_id').distinct().count()
+    turnout_pct = round((unique_voters_voted / total_voters) * 100, 2) if total_voters else 0
+    
+    # Get candidates with vote counts
+    candidates_qs = Candidate.objects.annotate(votes_count=Count('vote')).order_by('position', '-votes_count', 'name')
+    
+    # Create the HttpResponse object with PDF header
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="election_results_{timezone.now().strftime("%Y%m%d_%H%M%S")}.pdf"'
+    
+    # Create the PDF object using BytesIO buffer
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+    
+    # Container for PDF elements
+    elements = []
+    
+    # Define styles
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor('#1e40af'),
+        spaceAfter=30,
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold'
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=16,
+        textColor=colors.HexColor('#2563eb'),
+        spaceAfter=12,
+        spaceBefore=20,
+        fontName='Helvetica-Bold'
+    )
+    
+    normal_style = styles['Normal']
+    
+    # Title
+    elements.append(Paragraph("ELECTION RESULTS REPORT", title_style))
+    elements.append(Spacer(1, 0.2*inch))
+    
+    # Election Information
+    info_data = [
+        ['Election Title:', settings.election_title],
+        ['Generated On:', timezone.now().strftime('%B %d, %Y at %I:%M %p')],
+        ['Timezone:', settings.timezone],
+    ]
+    
+    info_table = Table(info_data, colWidths=[2*inch, 4*inch])
+    info_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#374151')),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    elements.append(info_table)
+    elements.append(Spacer(1, 0.3*inch))
+    
+    # Summary Statistics
+    elements.append(Paragraph("SUMMARY STATISTICS", heading_style))
+    
+    stats_data = [
+        ['Metric', 'Value'],
+        ['Total Votes Cast', str(total_votes)],
+        ['Total Registered Voters', str(total_voters)],
+        ['Voters Who Voted', str(unique_voters_voted)],
+        ['Turnout Percentage', f'{turnout_pct}%'],
+    ]
+    
+    stats_table = Table(stats_data, colWidths=[3*inch, 2*inch])
+    stats_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2563eb')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9fafb')]),
+    ]))
+    elements.append(stats_table)
+    elements.append(Spacer(1, 0.3*inch))
+    
+    # Overall Results
+    elements.append(Paragraph("OVERALL RESULTS", heading_style))
+    
+    overall_data = [['Rank', 'Candidate Name', 'Position', 'Votes', 'Percentage']]
+    rank = 1
+    for c in candidates_qs:
+        percentage = round((c.votes_count / total_votes) * 100, 1) if total_votes else 0
+        overall_data.append([str(rank), c.name, c.position, str(c.votes_count), f'{percentage}%'])
+        rank += 1
+    
+    overall_table = Table(overall_data, colWidths=[0.6*inch, 2*inch, 1.5*inch, 0.8*inch, 1*inch])
+    overall_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2563eb')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9fafb')]),
+        # Highlight first row (winner)
+        ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor('#dcfce7')),
+        ('TEXTCOLOR', (0, 1), (-1, 1), colors.HexColor('#166534')),
+        ('FONTNAME', (0, 1), (-1, 1), 'Helvetica-Bold'),
+    ]))
+    elements.append(overall_table)
+    elements.append(Spacer(1, 0.3*inch))
+    
+    # Results by Position
+    elements.append(Paragraph("RESULTS BY POSITION", heading_style))
+    
+    # Group by position
+    by_position = {}
+    for c in candidates_qs:
+        if c.position not in by_position:
+            by_position[c.position] = []
+        percentage = round((c.votes_count / total_votes) * 100, 1) if total_votes else 0
+        by_position[c.position].append({
+            'name': c.name,
+            'votes': c.votes_count,
+            'percentage': percentage
+        })
+    
+    for position, candidates in by_position.items():
+        # Position title
+        elements.append(Paragraph(f"<b>{position}</b>", styles['Heading3']))
+        elements.append(Spacer(1, 0.1*inch))
+        
+        position_data = [['Rank', 'Candidate Name', 'Votes', 'Percentage', 'Status']]
+        
+        for idx, c in enumerate(candidates, 1):
+            status = 'WINNER' if idx == 1 and c['votes'] > 0 else ''
+            # Check for tie
+            if idx == 1 and len(candidates) >= 2 and candidates[0]['votes'] == candidates[1]['votes']:
+                status = 'TIE'
+            position_data.append([str(idx), c['name'], str(c['votes']), f"{c['percentage']}%", status])
+        
+        position_table = Table(position_data, colWidths=[0.6*inch, 2.5*inch, 0.8*inch, 1*inch, 1*inch])
+        position_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3b82f6')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9fafb')]),
+            # Highlight winner
+            ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor('#dcfce7')),
+            ('TEXTCOLOR', (0, 1), (-1, 1), colors.HexColor('#166534')),
+            ('FONTNAME', (0, 1), (-1, 1), 'Helvetica-Bold'),
+        ]))
+        elements.append(position_table)
+        elements.append(Spacer(1, 0.2*inch))
+    
+    # Build PDF
+    doc.build(elements)
+    
+    # Get the value of the BytesIO buffer and write it to response
+    pdf = buffer.getvalue()
+    buffer.close()
+    response.write(pdf)
     
     return response

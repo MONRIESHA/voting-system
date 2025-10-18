@@ -75,9 +75,14 @@
                 <h4 class="mb-0">Public Results</h4>
             </div>
             <div class="d-flex gap-2">
-                <a href="{% url 'download_results' %}" class="btn btn-success btn-sm">
-                    <i class="fas fa-download me-1"></i> Download CSV
-                </a>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'download_results' %}" class="btn btn-success btn-sm">
+                        <i class="fas fa-file-csv me-1"></i> CSV
+                    </a>
+                    <a href="{% url 'download_results_pdf' %}" class="btn btn-success btn-sm">
+                        <i class="fas fa-file-pdf me-1"></i> PDF
+                    </a>
+                </div>
                 <a href="{% url 'landing' %}" class="btn btn-outline-secondary btn-sm">
                     <i class="fas fa-home me-1"></i> Home
                 </a>
@@ -101,9 +106,10 @@
             <div class="d-flex align-items-center">
                 <i class="fas fa-info-circle me-3" style="color: #22c55e; font-size: 1.5rem;"></i>
                 <div>
-                    <strong style="color: #22c55e;">Download Complete Analysis</strong>
+                    <strong style="color: #22c55e;">Download Complete Analysis (CSV or PDF)</strong>
                     <p class="mb-0 mt-1" style="font-size: 0.9rem; color: var(--muted);">
-                        CSV file includes: Summary statistics, overall results, results by position, winner detection, and detailed vote log with timestamps.
+                        Download includes: Summary statistics, overall results, results by position, winner detection, and detailed vote log with timestamps.
+                        <strong>CSV</strong> for Excel/Sheets analysis, <strong>PDF</strong> for professional reports.
                     </p>
                 </div>
             </div>
